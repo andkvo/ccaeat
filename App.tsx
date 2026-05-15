@@ -28,7 +28,7 @@ const SPEECH_CUES: Cue[] = [
   { id: 'speech-2m', atSeconds: 120, message: 'Hold up 3 fingers.', visual: '3' },
   { id: 'speech-3m', atSeconds: 180, message: 'Hold up 2 fingers.', visual: '2' },
   { id: 'speech-4m', atSeconds: 240, message: 'Hold up 1 finger.', visual: '1' },
-  { id: 'speech-430', atSeconds: 270, message: 'Hold up bent index finger.', visual: 'BENT' },
+  { id: 'speech-430', atSeconds: 270, message: 'Show 30 seconds remaining.', visual: '30' },
   {
     id: 'speech-455',
     atSeconds: 295,
