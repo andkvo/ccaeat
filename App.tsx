@@ -1,3 +1,4 @@
+import * as Speech from 'expo-speech';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -8,6 +9,7 @@ type Cue = {
   id: string;
   atSeconds: number;
   message: string;
+  visual?: string;
 };
 
 const PREP_DURATION_SECONDS = 5 * 60;
@@ -22,12 +24,12 @@ const PREP_CUES: Cue[] = [
 ];
 
 const SPEECH_CUES: Cue[] = [
-  { id: 'speech-1m', atSeconds: 60, message: 'Hold up 4 fingers.' },
-  { id: 'speech-2m', atSeconds: 120, message: 'Hold up 3 fingers.' },
-  { id: 'speech-3m', atSeconds: 180, message: 'Hold up 2 fingers.' },
-  { id: 'speech-4m', atSeconds: 240, message: 'Hold up 1 finger.' },
-  { id: 'speech-430', atSeconds: 270, message: 'Hold up bent index finger.' },
-  { id: 'speech-455', atSeconds: 295, message: 'Hold up 5-4-3-2-1 fingers.' },
+  { id: 'speech-1m', atSeconds: 60, message: 'Hold up 4 fingers.', visual: '4' },
+  { id: 'speech-2m', atSeconds: 120, message: 'Hold up 3 fingers.', visual: '3' },
+  { id: 'speech-3m', atSeconds: 180, message: 'Hold up 2 fingers.', visual: '2' },
+  { id: 'speech-4m', atSeconds: 240, message: 'Hold up 1 finger.', visual: '1' },
+  { id: 'speech-430', atSeconds: 270, message: 'Hold up bent index finger.', visual: 'BENT' },
+  { id: 'speech-455', atSeconds: 295, message: 'Hold up 5-4-3-2-1 fingers.', visual: '5-4-3-2-1' },
 ];
 
 const formatFromSeconds = (totalSeconds: number): string => {
@@ -43,10 +45,13 @@ export default function App() {
   const [currentCue, setCurrentCue] = useState('Ready.');
   const [cueLog, setCueLog] = useState<string[]>([]);
   const [reportedSpeechTime, setReportedSpeechTime] = useState<string | null>(null);
+  const [visualSignal, setVisualSignal] = useState('READY');
+  const [flashVisible, setFlashVisible] = useState(false);
 
   const firedCuesRef = useRef(new Set<string>());
   const previousElapsedMsRef = useRef(0);
   const tickTimestampRef = useRef<number | null>(null);
+  const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const displaySeconds = useMemo(() => {
     if (mode === 'prep') {
@@ -57,12 +62,32 @@ export default function App() {
     return Math.floor(elapsedMs / 1000);
   }, [elapsedMs, mode]);
 
+  const clearFlashTimeout = () => {
+    if (flashTimeoutRef.current) {
+      clearTimeout(flashTimeoutRef.current);
+      flashTimeoutRef.current = null;
+    }
+  };
+
+  const triggerFlash = () => {
+    clearFlashTimeout();
+    setFlashVisible(true);
+    flashTimeoutRef.current = setTimeout(() => {
+      setFlashVisible(false);
+      flashTimeoutRef.current = null;
+    }, 750);
+  };
+
   const resetTimer = () => {
     setRunning(false);
     setElapsedMs(0);
     setCurrentCue('Ready.');
     setCueLog([]);
     setReportedSpeechTime(null);
+    setVisualSignal('READY');
+    setFlashVisible(false);
+    clearFlashTimeout();
+    Speech.stop();
     firedCuesRef.current.clear();
     previousElapsedMsRef.current = 0;
     tickTimestampRef.current = null;
@@ -77,10 +102,22 @@ export default function App() {
     resetTimer();
   };
 
-  const addCue = (cue: Cue) => {
+  const addCue = (cue: Cue, cueMode: TimerMode) => {
     firedCuesRef.current.add(cue.id);
     setCurrentCue(cue.message);
     setCueLog((previous) => [cue.message, ...previous].slice(0, 6));
+
+    if (cueMode === 'prep') {
+      Speech.speak(cue.message, {
+        language: 'en-US',
+        rate: 0.95,
+        pitch: 1,
+      });
+      return;
+    }
+
+    setVisualSignal(cue.visual ?? cue.message);
+    triggerFlash();
   };
 
   useEffect(() => {
@@ -130,7 +167,7 @@ export default function App() {
         }
 
         if (previousRemainingSeconds > cue.atSeconds && currentRemainingSeconds <= cue.atSeconds) {
-          addCue(cue);
+          addCue(cue, 'prep');
         }
       });
     } else {
@@ -143,13 +180,20 @@ export default function App() {
         }
 
         if (previousSeconds < cue.atSeconds && currentSeconds >= cue.atSeconds) {
-          addCue(cue);
+          addCue(cue, 'speech');
         }
       });
     }
 
     previousElapsedMsRef.current = elapsedMs;
   }, [elapsedMs, mode]);
+
+  useEffect(() => {
+    return () => {
+      clearFlashTimeout();
+      Speech.stop();
+    };
+  }, []);
 
   const toggleRunState = () => {
     if (!running && mode === 'prep' && elapsedMs >= PREP_DURATION_SECONDS * 1000) {
@@ -166,6 +210,7 @@ export default function App() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" />
+      {flashVisible ? <View pointerEvents="none" style={styles.flashOverlay} /> : null}
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>CCA EA Timer</Text>
 
@@ -187,10 +232,19 @@ export default function App() {
         </View>
 
         <Text style={styles.modeDescription}>
-          {mode === 'prep' ? 'Count Down from 5:00' : 'Count Up from 0:00'}
+          {mode === 'prep'
+            ? 'Spoken prep signals • Count Down from 5:00'
+            : 'Silent speaking signals • Count Up from 0:00'}
         </Text>
 
         <Text style={styles.timer}>{formatFromSeconds(displaySeconds)}</Text>
+
+        {mode === 'speech' ? (
+          <View style={styles.visualSignalCard}>
+            <Text style={styles.visualSignalLabel}>Silent Visual Signal</Text>
+            <Text style={styles.visualSignalValue}>{visualSignal}</Text>
+          </View>
+        ) : null}
 
         <View style={styles.controlsRow}>
           <Pressable style={[styles.controlButton, styles.primaryButton]} onPress={toggleRunState}>
@@ -231,6 +285,11 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#0f172a',
+  },
+  flashOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(248, 250, 252, 0.35)',
+    zIndex: 3,
   },
   container: {
     flexGrow: 1,
@@ -281,6 +340,28 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     marginVertical: 8,
+  },
+  visualSignalCard: {
+    borderRadius: 16,
+    borderColor: '#f8fafc',
+    borderWidth: 2,
+    paddingVertical: 16,
+    alignItems: 'center',
+    backgroundColor: '#1e293b',
+    gap: 4,
+  },
+  visualSignalLabel: {
+    color: '#93c5fd',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    fontSize: 13,
+  },
+  visualSignalValue: {
+    color: '#f8fafc',
+    fontWeight: '800',
+    fontSize: 60,
+    lineHeight: 68,
   },
   controlsRow: {
     flexDirection: 'row',
