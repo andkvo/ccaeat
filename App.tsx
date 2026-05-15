@@ -20,7 +20,7 @@ const PREP_CUES: Cue[] = [
   { id: 'prep-2m', atSeconds: 120, message: '2 minutes.' },
   { id: 'prep-1m', atSeconds: 60, message: '1 minute.' },
   { id: 'prep-30s', atSeconds: 30, message: '30 seconds.' },
-  { id: 'prep-5s', atSeconds: 5, message: '5-4-3-2-1-Time.' },
+  { id: 'prep-5s', atSeconds: 5, message: '5-4-3-2-1 Time.' },
 ];
 
 const SPEECH_CUES: Cue[] = [
@@ -29,7 +29,12 @@ const SPEECH_CUES: Cue[] = [
   { id: 'speech-3m', atSeconds: 180, message: 'Hold up 2 fingers.', visual: '2' },
   { id: 'speech-4m', atSeconds: 240, message: 'Hold up 1 finger.', visual: '1' },
   { id: 'speech-430', atSeconds: 270, message: 'Hold up bent index finger.', visual: 'BENT' },
-  { id: 'speech-455', atSeconds: 295, message: 'Hold up 5-4-3-2-1 fingers.', visual: '5-4-3-2-1' },
+  {
+    id: 'speech-455',
+    atSeconds: 295,
+    message: 'Show 5-4-3-2-1 finger countdown.',
+    visual: '5-4-3-2-1',
+  },
 ];
 
 const formatFromSeconds = (totalSeconds: number): string => {
@@ -241,7 +246,7 @@ export default function App() {
 
         {mode === 'speech' ? (
           <View style={styles.visualSignalCard}>
-            <Text style={styles.visualSignalLabel}>Silent Visual Signal</Text>
+            <Text style={styles.visualSignalLabel}>Silent Visual Signal (Minutes Remaining)</Text>
             <Text style={styles.visualSignalValue}>{visualSignal}</Text>
           </View>
         ) : null}
