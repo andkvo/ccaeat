@@ -1,7 +1,7 @@
 import { Audio } from 'expo-av';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 type TimerMode = 'prep' | 'speech';
 
@@ -55,11 +55,11 @@ export default function App() {
   const [mode, setMode] = useState<TimerMode>('prep');
   const [elapsedMs, setElapsedMs] = useState(0);
   const [running, setRunning] = useState(false);
-  const [currentCue, setCurrentCue] = useState('Ready.');
-  const [cueLog, setCueLog] = useState<string[]>([]);
   const [reportedSpeechTime, setReportedSpeechTime] = useState<string | null>(null);
   const [visualSignal, setVisualSignal] = useState('READY');
   const [flashVisible, setFlashVisible] = useState(false);
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
   const firedCuesRef = useRef(new Set<string>());
   const previousElapsedMsRef = useRef(0);
@@ -181,8 +181,6 @@ export default function App() {
   const resetTimer = () => {
     setRunning(false);
     setElapsedMs(0);
-    setCurrentCue('Ready.');
-    setCueLog([]);
     setReportedSpeechTime(null);
     setVisualSignal('READY');
     setFlashVisible(false);
@@ -205,8 +203,6 @@ export default function App() {
 
   const addCue = (cue: Cue, cueMode: TimerMode) => {
     firedCuesRef.current.add(cue.id);
-    setCurrentCue(cue.message);
-    setCueLog((previous) => [cue.message, ...previous].slice(0, 6));
 
     if (cueMode === 'prep') {
       playSound(cue.id);
@@ -258,7 +254,6 @@ export default function App() {
   useEffect(() => {
     if (mode === 'prep' && elapsedMs >= PREP_DURATION_SECONDS * 1000 && running) {
       setRunning(false);
-      setCurrentCue('Prep time complete.');
     }
   }, [elapsedMs, mode, running]);
 
@@ -323,70 +318,59 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" />
       {flashVisible ? <View pointerEvents="none" style={styles.flashOverlay} /> : null}
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>CCA EA Timer</Text>
-
-        <View style={styles.modeRow}>
-          <Pressable
-            accessibilityRole="button"
-            style={[styles.modeButton, mode === 'prep' && styles.modeButtonActive]}
-            onPress={() => switchMode('prep')}
-          >
-            <Text style={[styles.modeButtonText, mode === 'prep' && styles.modeButtonTextActive]}>Prep</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            style={[styles.modeButton, mode === 'speech' && styles.modeButtonActive]}
-            onPress={() => switchMode('speech')}
-          >
-            <Text style={[styles.modeButtonText, mode === 'speech' && styles.modeButtonTextActive]}>Speaking</Text>
-          </Pressable>
-        </View>
-
-        <Text style={styles.modeDescription}>
-          {mode === 'prep'
-            ? 'Spoken prep signals • Count Down from 5:00'
-            : 'Silent speaking signals • Count Up from 0:00'}
-        </Text>
-
-        <Text style={styles.timer}>{formatFromSeconds(displaySeconds)}</Text>
-
-        {mode === 'speech' ? (
-          <View style={styles.visualSignalCard}>
-            <Text style={styles.visualSignalLabel}>Silent Visual Signal (Minutes Remaining)</Text>
-            <Text style={styles.visualSignalValue}>{visualSignal}</Text>
+      <ScrollView contentContainerStyle={[styles.container, isLandscape && styles.containerLandscape]}>
+        <View style={[styles.layout, isLandscape && styles.layoutLandscape]}>
+          <View style={[styles.leftColumn, isLandscape && styles.leftColumnLandscape]}>
+            <Text style={[styles.title, isLandscape && styles.titleLandscape]}>CCA EA Timer</Text>
+            <View style={[styles.modeSelector, isLandscape ? styles.modeColumn : styles.modeRow]}>
+              <Pressable
+                accessibilityRole="button"
+                style={[styles.modeButton, isLandscape && styles.modeButtonLandscape, mode === 'prep' && styles.modeButtonActive]}
+                onPress={() => switchMode('prep')}
+              >
+                <Text style={[styles.modeButtonText, mode === 'prep' && styles.modeButtonTextActive]}>Prep</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                style={[styles.modeButton, isLandscape && styles.modeButtonLandscape, mode === 'speech' && styles.modeButtonActive]}
+                onPress={() => switchMode('speech')}
+              >
+                <Text style={[styles.modeButtonText, mode === 'speech' && styles.modeButtonTextActive]}>Speaking</Text>
+              </Pressable>
+            </View>
           </View>
-        ) : null}
 
-        <View style={styles.controlsRow}>
-          <Pressable style={[styles.controlButton, styles.primaryButton]} onPress={toggleRunState}>
-            <Text style={styles.controlText}>{running ? 'Pause' : 'Start'}</Text>
-          </Pressable>
-          <Pressable style={[styles.controlButton, styles.secondaryButton]} onPress={resetTimer}>
-            <Text style={[styles.controlText, styles.secondaryText]}>Reset</Text>
-          </Pressable>
-        </View>
+          <View style={[styles.rightColumn, isLandscape && styles.rightColumnLandscape]}>
+            <Text style={[styles.modeDescription, isLandscape && styles.modeDescriptionLandscape]}>
+              {mode === 'prep'
+                ? 'Spoken prep signals • Count Down from 5:00'
+                : 'Silent speaking signals • Count Up from 0:00'}
+            </Text>
 
-        {reportedSpeechTime ? (
-          <Text style={styles.reportText}>Report to judges: {reportedSpeechTime}</Text>
-        ) : null}
+            <View style={[styles.timerArea, isLandscape && styles.timerAreaLandscape]}>
+              <Text style={[styles.timer, isLandscape && styles.timerLandscape]}>{formatFromSeconds(displaySeconds)}</Text>
+            </View>
 
-        <View style={styles.cueCard}>
-          <Text style={styles.cueLabel}>Current Signal</Text>
-          <Text style={styles.cueText}>{currentCue}</Text>
-        </View>
+            {mode === 'speech' ? (
+              <View style={styles.visualSignalCard}>
+                <Text style={styles.visualSignalLabel}>Silent Visual Signal (Minutes Remaining)</Text>
+                <Text style={styles.visualSignalValue}>{visualSignal}</Text>
+              </View>
+            ) : null}
 
-        <View style={styles.logCard}>
-          <Text style={styles.logLabel}>Recent Signals</Text>
-          {cueLog.length === 0 ? (
-            <Text style={styles.logItem}>No signals yet.</Text>
-          ) : (
-            cueLog.map((entry, index) => (
-              <Text key={`${entry}-${index}`} style={styles.logItem}>
-                • {entry}
-              </Text>
-            ))
-          )}
+            <View style={styles.controlsRow}>
+              <Pressable style={[styles.controlButton, styles.primaryButton]} onPress={toggleRunState}>
+                <Text style={styles.controlText}>{running ? 'Pause' : 'Start'}</Text>
+              </Pressable>
+              <Pressable style={[styles.controlButton, styles.secondaryButton]} onPress={resetTimer}>
+                <Text style={[styles.controlText, styles.secondaryText]}>Reset</Text>
+              </Pressable>
+            </View>
+
+            {reportedSpeechTime ? (
+              <Text style={styles.reportText}>Report to judges: {reportedSpeechTime}</Text>
+            ) : null}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -409,6 +393,29 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     gap: 14,
   },
+  containerLandscape: {
+    paddingVertical: 18,
+  },
+  layout: {
+    flex: 1,
+    gap: 14,
+  },
+  layoutLandscape: {
+    flexDirection: 'row',
+    gap: 18,
+  },
+  leftColumn: {
+    gap: 12,
+  },
+  leftColumnLandscape: {
+    width: 220,
+  },
+  rightColumn: {
+    gap: 14,
+  },
+  rightColumnLandscape: {
+    flex: 1,
+  },
   title: {
     color: '#f8fafc',
     fontSize: 30,
@@ -416,9 +423,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
   },
+  titleLandscape: {
+    textAlign: 'left',
+    marginBottom: 0,
+  },
+  modeSelector: {
+    gap: 10,
+  },
   modeRow: {
     flexDirection: 'row',
-    gap: 10,
+  },
+  modeColumn: {
+    flexDirection: 'column',
   },
   modeButton: {
     flex: 1,
@@ -428,6 +444,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',
+  },
+  modeButtonLandscape: {
+    flex: 0,
   },
   modeButtonActive: {
     borderColor: '#60a5fa',
@@ -446,12 +465,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
+  modeDescriptionLandscape: {
+    textAlign: 'left',
+  },
+  timerArea: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timerAreaLandscape: {
+    flex: 1,
+  },
   timer: {
     color: '#f8fafc',
     fontSize: 68,
     fontWeight: '700',
     textAlign: 'center',
     marginVertical: 8,
+  },
+  timerLandscape: {
+    fontSize: 96,
+    lineHeight: 104,
   },
   visualSignalCard: {
     borderRadius: 16,
@@ -504,45 +537,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     fontSize: 16,
-  },
-  cueCard: {
-    backgroundColor: '#111827',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#334155',
-    gap: 6,
-  },
-  cueLabel: {
-    color: '#93c5fd',
-    fontWeight: '600',
-    fontSize: 14,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  cueText: {
-    color: '#f8fafc',
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  logCard: {
-    backgroundColor: '#111827',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#334155',
-    gap: 6,
-  },
-  logLabel: {
-    color: '#93c5fd',
-    fontWeight: '600',
-    fontSize: 14,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  logItem: {
-    color: '#e2e8f0',
-    fontSize: 16,
-    lineHeight: 22,
   },
 });
