@@ -14,7 +14,7 @@ type Cue = {
 
 const PREP_DURATION_SECONDS = 5 * 60;
 const FLASH_COUNT = 10;
-const FLASH_TOGGLES_PER_FLASH = 2;
+const TOGGLES_PER_FLASH_CYCLE = 2;
 const FLASH_INTERVAL_MS = 120;
 const FLASH_START_DELAY_MS = 16;
 
@@ -62,6 +62,7 @@ export default function App() {
   const tickTimestampRef = useRef<number | null>(null);
   const flashStartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flashIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const flashSequenceRef = useRef(0);
 
   const displaySeconds = useMemo(() => {
     if (mode === 'prep') {
@@ -73,6 +74,8 @@ export default function App() {
   }, [elapsedMs, mode]);
 
   const clearFlashTimeout = () => {
+    flashSequenceRef.current += 1;
+
     if (flashStartTimeoutRef.current) {
       clearTimeout(flashStartTimeoutRef.current);
       flashStartTimeoutRef.current = null;
@@ -87,14 +90,24 @@ export default function App() {
   const triggerFlash = () => {
     clearFlashTimeout();
     setFlashVisible(false);
-    let togglesRemaining = FLASH_COUNT * FLASH_TOGGLES_PER_FLASH;
+    const sequenceId = flashSequenceRef.current;
+    let togglesRemaining = FLASH_COUNT * TOGGLES_PER_FLASH_CYCLE;
 
     flashStartTimeoutRef.current = setTimeout(() => {
+      if (flashSequenceRef.current !== sequenceId) {
+        return;
+      }
+
       setFlashVisible(true);
       togglesRemaining -= 1;
       flashStartTimeoutRef.current = null;
 
       flashIntervalRef.current = setInterval(() => {
+        if (flashSequenceRef.current !== sequenceId) {
+          clearFlashTimeout();
+          return;
+        }
+
         setFlashVisible((previous) => !previous);
         togglesRemaining -= 1;
 
