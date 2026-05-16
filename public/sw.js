@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ccaeat-v1';
+const CACHE_NAME = 'limited-prep-timer-v1';
 
 // On install, cache the root document so the app works offline.
 self.addEventListener('install', (event) => {
@@ -51,7 +51,7 @@ self.addEventListener('fetch', (event) => {
       // For all other assets: return cached version immediately (if available)
       // while refreshing in the background.
       if (cached) {
-        networkPromise.catch(() => {});
+        networkPromise.catch((err) => console.warn('Background cache update failed:', err));
         return cached;
       }
 
