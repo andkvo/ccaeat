@@ -16,6 +16,7 @@ const PREP_DURATION_SECONDS = 5 * 60;
 const FLASH_COUNT = 10;
 const FLASH_ON_MS = 120;
 const FLASH_OFF_MS = 120;
+const FLASH_START_DELAY_MS = 16;
 
 const PREP_CUES: Cue[] = [
   { id: 'prep-4m', atSeconds: 240, message: '4 minutes.' },
@@ -77,9 +78,10 @@ export default function App() {
 
   const triggerFlash = () => {
     clearFlashTimeout();
+    setFlashVisible(false);
 
     for (let flashIndex = 0; flashIndex < FLASH_COUNT; flashIndex += 1) {
-      const cycleStart = flashIndex * (FLASH_ON_MS + FLASH_OFF_MS);
+      const cycleStart = FLASH_START_DELAY_MS + flashIndex * (FLASH_ON_MS + FLASH_OFF_MS);
       const showTimeout = setTimeout(() => {
         setFlashVisible(true);
       }, cycleStart);
