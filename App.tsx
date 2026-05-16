@@ -321,7 +321,7 @@ export default function App() {
           <View style={[styles.rightColumn, isLandscape && styles.rightColumnLandscape]}>
             {mode === 'prep' ? (
               <Text style={[styles.modeDescription, isLandscape && styles.modeDescriptionLandscape]}>
-                Spoken prep signals • Count Down from 5:00
+                Spoken + visual prep signals • Count Down from 5:00
               </Text>
             ) : null}
 
