@@ -370,7 +370,7 @@ export default function App() {
         <View style={[styles.layout, isLandscape && styles.layoutLandscape]}>
           <View style={[styles.leftColumn, isLandscape && styles.leftColumnLandscape]}>
             <View style={styles.titleRow}>
-              <Text style={[styles.title, isLandscape && styles.titleLandscape]}>CCA Limited Prep Timer</Text>
+              <Text style={[styles.title, isLandscape && styles.titleLandscape]}>{isLandscape ? 'Limited Prep' : 'Limited Prep Timer'}</Text>
               <Pressable onPress={() => { resetTimer(); setShowSettings(true); }} style={styles.settingsButton}>
                 <Text style={styles.settingsButtonText}>⚙</Text>
               </Pressable>
