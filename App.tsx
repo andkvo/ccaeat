@@ -1,4 +1,4 @@
-import * as Speech from 'expo-speech';
+import { Audio } from 'expo-av';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -37,6 +37,15 @@ const SPEECH_CUES: Cue[] = [
   },
 ];
 
+const PREP_AUDIO: Record<string, number> = {
+  'prep-4m': require('./assets/audio/prep-4m.mp3'),
+  'prep-3m': require('./assets/audio/prep-3m.mp3'),
+  'prep-2m': require('./assets/audio/prep-2m.mp3'),
+  'prep-1m': require('./assets/audio/prep-1m.mp3'),
+  'prep-30s': require('./assets/audio/prep-30s.mp3'),
+  'prep-5s': require('./assets/audio/prep-5s.mp3'),
+};
+
 const formatFromSeconds = (totalSeconds: number): string => {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -57,6 +66,7 @@ export default function App() {
   const previousElapsedMsRef = useRef(0);
   const tickTimestampRef = useRef<number | null>(null);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeSoundRef = useRef<Audio.Sound | null>(null);
 
   const displaySeconds = useMemo(() => {
     if (mode === 'prep') {
@@ -83,6 +93,29 @@ export default function App() {
     }, 750);
   };
 
+  const stopSound = async () => {
+    const sound = activeSoundRef.current;
+    activeSoundRef.current = null;
+    await sound?.unloadAsync();
+  };
+
+  const playSound = async (cueId: string) => {
+    const source = PREP_AUDIO[cueId];
+    if (source == null) return;
+    await stopSound();
+    try {
+      const { sound } = await Audio.Sound.createAsync(source);
+      activeSoundRef.current = sound;
+      await sound.playAsync();
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          sound.unloadAsync();
+          if (activeSoundRef.current === sound) activeSoundRef.current = null;
+        }
+      });
+    } catch {}
+  };
+
   const resetTimer = () => {
     setRunning(false);
     setElapsedMs(0);
@@ -92,7 +125,7 @@ export default function App() {
     setVisualSignal('READY');
     setFlashVisible(false);
     clearFlashTimeout();
-    Speech.stop();
+    stopSound();
     firedCuesRef.current.clear();
     previousElapsedMsRef.current = 0;
     tickTimestampRef.current = null;
@@ -113,11 +146,7 @@ export default function App() {
     setCueLog((previous) => [cue.message, ...previous].slice(0, 6));
 
     if (cueMode === 'prep') {
-      Speech.speak(cue.message, {
-        language: 'en-US',
-        rate: 0.95,
-        pitch: 1,
-      });
+      playSound(cue.id);
       return;
     }
 
@@ -194,9 +223,11 @@ export default function App() {
   }, [elapsedMs, mode]);
 
   useEffect(() => {
+    Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: true });
+
     return () => {
       clearFlashTimeout();
-      Speech.stop();
+      stopSound();
     };
   }, []);
 

@@ -1,0 +1,37 @@
+name: Generate Audio Cues
+
+on:
+  workflow_dispatch:
+    inputs:
+      voice:
+        description: "macOS say voice (e.g. Samantha, Alex, Tom)"
+        default: Samantha
+      rate:
+        description: "Speech rate (words per minute)"
+        default: "150"
+
+jobs:
+  generate:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ffmpeg
+        run: brew install ffmpeg
+
+      - name: Generate MP3s
+        env:
+          VOICE: ${{ inputs.voice }}
+          RATE: ${{ inputs.rate }}
+        run: bash scripts/generate-audio.sh
+
+      - name: Commit generated audio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add assets/audio/
+          git diff --cached --quiet || git commit -m "chore: regenerate prep cue audio (voice: ${{ inputs.voice }})"
+          git push
