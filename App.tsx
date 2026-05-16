@@ -13,6 +13,9 @@ type Cue = {
 };
 
 const PREP_DURATION_SECONDS = 5 * 60;
+const FLASH_COUNT = 10;
+const FLASH_ON_MS = 120;
+const FLASH_OFF_MS = 120;
 
 const PREP_CUES: Cue[] = [
   { id: 'prep-4m', atSeconds: 240, message: '4 minutes.' },
@@ -56,7 +59,7 @@ export default function App() {
   const firedCuesRef = useRef(new Set<string>());
   const previousElapsedMsRef = useRef(0);
   const tickTimestampRef = useRef<number | null>(null);
-  const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const displaySeconds = useMemo(() => {
     if (mode === 'prep') {
@@ -68,19 +71,24 @@ export default function App() {
   }, [elapsedMs, mode]);
 
   const clearFlashTimeout = () => {
-    if (flashTimeoutRef.current) {
-      clearTimeout(flashTimeoutRef.current);
-      flashTimeoutRef.current = null;
-    }
+    flashTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+    flashTimeoutsRef.current = [];
   };
 
   const triggerFlash = () => {
     clearFlashTimeout();
-    setFlashVisible(true);
-    flashTimeoutRef.current = setTimeout(() => {
-      setFlashVisible(false);
-      flashTimeoutRef.current = null;
-    }, 750);
+
+    for (let flashIndex = 0; flashIndex < FLASH_COUNT; flashIndex += 1) {
+      const cycleStart = flashIndex * (FLASH_ON_MS + FLASH_OFF_MS);
+      const showTimeout = setTimeout(() => {
+        setFlashVisible(true);
+      }, cycleStart);
+      const hideTimeout = setTimeout(() => {
+        setFlashVisible(false);
+      }, cycleStart + FLASH_ON_MS);
+
+      flashTimeoutsRef.current.push(showTimeout, hideTimeout);
+    }
   };
 
   const resetTimer = () => {
