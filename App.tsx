@@ -1,7 +1,7 @@
 import { Audio } from 'expo-av';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 type TimerMode = 'prep' | 'speech';
 
@@ -313,7 +313,7 @@ export default function App() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar style="light" />
-        <ScrollView contentContainerStyle={styles.settingsContainer}>
+        <ScrollView contentContainerStyle={[styles.settingsContainer, isLandscape && styles.settingsContainerLandscape]}>
           <Text style={styles.settingsTitle}>Settings</Text>
 
           <View style={styles.settingBlock}>
@@ -357,6 +357,13 @@ export default function App() {
           <Pressable style={styles.doneButton} onPress={() => setShowSettings(false)}>
             <Text style={styles.doneButtonText}>Done</Text>
           </Pressable>
+
+          <Text style={styles.brandingText}>
+            Created for{' '}
+            <Text style={styles.brandingLink} onPress={() => Linking.openURL('https://www.ccadebate.org/')}>CCA</Text>
+            {' '}by{' '}
+            <Text style={styles.brandingLink} onPress={() => Linking.openURL('https://www.americanappworks.com/')}>American Appworks, LLC</Text>
+          </Text>
         </ScrollView>
       </SafeAreaView>
     );
@@ -575,8 +582,12 @@ const styles = StyleSheet.create({
   settingsContainer: {
     flexGrow: 1,
     paddingHorizontal: 28,
-    paddingVertical: 36,
-    gap: 32,
+    paddingVertical: 28,
+    gap: 24,
+  },
+  settingsContainerLandscape: {
+    paddingVertical: 14,
+    gap: 14,
   },
   settingsTitle: {
     color: '#f8fafc',
@@ -633,5 +644,15 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     fontSize: 18,
     fontWeight: '700',
+  },
+  brandingText: {
+    color: '#475569',
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  brandingLink: {
+    color: '#60a5fa',
+    textDecorationLine: 'underline',
   },
 });
