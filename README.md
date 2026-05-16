@@ -25,3 +25,18 @@ For local development UI preview:
 ```bash
 npm run start
 ```
+
+## Deploy
+
+Pushes to `main` run the `Deploy PWA to S3 + CloudFront` workflow.
+
+To enable deployment, provision AWS resources with `bash scripts/setup-aws.sh` and add these GitHub Actions secrets:
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `S3_BUCKET`
+- `CLOUDFRONT_DISTRIBUTION_ID`
+
+Set `AWS_REGION` as a repository variable or secret if needed. If it is not set, the workflow defaults to `us-east-1`.
+
+If the required deployment secrets are missing, the workflow still builds the web app and skips the AWS deploy steps.
