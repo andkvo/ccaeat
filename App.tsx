@@ -14,6 +14,7 @@ type Cue = {
 
 const PREP_DURATION_SECONDS = 5 * 60;
 const FLASH_COUNT = 10;
+const FLASH_TOGGLES_PER_FLASH = 2;
 const FLASH_INTERVAL_MS = 120;
 const FLASH_START_DELAY_MS = 16;
 
@@ -86,7 +87,7 @@ export default function App() {
   const triggerFlash = () => {
     clearFlashTimeout();
     setFlashVisible(false);
-    let togglesRemaining = FLASH_COUNT * 2;
+    let togglesRemaining = FLASH_COUNT * FLASH_TOGGLES_PER_FLASH;
 
     flashStartTimeoutRef.current = setTimeout(() => {
       setFlashVisible(true);
@@ -98,11 +99,7 @@ export default function App() {
         togglesRemaining -= 1;
 
         if (togglesRemaining <= 0) {
-          if (flashIntervalRef.current) {
-            clearInterval(flashIntervalRef.current);
-            flashIntervalRef.current = null;
-          }
-
+          clearFlashTimeout();
           setFlashVisible(false);
         }
       }, FLASH_INTERVAL_MS);
