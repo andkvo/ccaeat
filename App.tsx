@@ -297,7 +297,7 @@ export default function App() {
       <ScrollView contentContainerStyle={[styles.container, isLandscape && styles.containerLandscape]}>
         <View style={[styles.layout, isLandscape && styles.layoutLandscape]}>
           <View style={[styles.leftColumn, isLandscape && styles.leftColumnLandscape]}>
-            <Text style={[styles.title, isLandscape && styles.titleLandscape]}>CCA EA Timer</Text>
+            <Text style={[styles.title, isLandscape && styles.titleLandscape]}>CCA Limited Prep Timer</Text>
             <View style={[styles.modeSelector, isLandscape ? styles.modeColumn : styles.modeRow]}>
               <Pressable
                 accessibilityRole="button"
