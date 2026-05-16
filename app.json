@@ -13,7 +13,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.americanappworks.ccalimitedpreptimer",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -31,6 +35,11 @@
       "themeColor": "#0f172a",
       "backgroundColor": "#0f172a",
       "lang": "en"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "989a7d57-de34-4e7b-8b82-185904d6b01a"
+      }
     }
   }
 }

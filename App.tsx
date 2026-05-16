@@ -2,6 +2,7 @@ import { Audio } from 'expo-av';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 
 type TimerMode = 'prep' | 'speech';
 
@@ -21,6 +22,8 @@ const FLASH_START_DELAY_MS = 16;
 const MIN_DURATION_SECONDS = 60;
 const MAX_DURATION_SECONDS = 300;
 const DURATION_STEP = 30;
+
+const APP_INSTALL_URL = 'https://expo.dev/accounts/[account]/projects/ccaeat-expo/builds';
 
 const ALL_PREP_CUES: Cue[] = [
   { id: 'prep-4m', atSeconds: 240, message: '4 minutes.', visual: '4' },
@@ -364,6 +367,13 @@ export default function App() {
             {' '}by{' '}
             <Text style={styles.brandingLink} onPress={() => Linking.openURL('https://www.americanappworks.com/')}>American Appworks, LLC</Text>
           </Text>
+
+          <View style={styles.qrSection}>
+            <Text style={styles.qrLabel}>Share this app</Text>
+            <View style={styles.qrCode}>
+              <QRCode value={APP_INSTALL_URL} size={160} color="#f8fafc" backgroundColor="#1e293b" />
+            </View>
+          </View>
         </ScrollView>
       </SafeAreaView>
     );
@@ -654,5 +664,23 @@ const styles = StyleSheet.create({
   brandingLink: {
     color: '#60a5fa',
     textDecorationLine: 'underline',
+  },
+  qrSection: {
+    alignItems: 'center',
+    gap: 10,
+  },
+  qrLabel: {
+    color: '#94a3b8',
+    fontSize: 13,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  qrCode: {
+    padding: 12,
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
 });
