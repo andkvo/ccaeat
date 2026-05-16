@@ -19,11 +19,11 @@ const FLASH_INTERVAL_MS = 120;
 const FLASH_START_DELAY_MS = 16;
 
 const PREP_CUES: Cue[] = [
-  { id: 'prep-4m', atSeconds: 240, message: '4 minutes.' },
-  { id: 'prep-3m', atSeconds: 180, message: '3 minutes.' },
-  { id: 'prep-2m', atSeconds: 120, message: '2 minutes.' },
-  { id: 'prep-1m', atSeconds: 60, message: '1 minute.' },
-  { id: 'prep-30s', atSeconds: 30, message: '30 seconds.' },
+  { id: 'prep-4m', atSeconds: 240, message: '4 minutes.', visual: '4' },
+  { id: 'prep-3m', atSeconds: 180, message: '3 minutes.', visual: '3' },
+  { id: 'prep-2m', atSeconds: 120, message: '2 minutes.', visual: '2' },
+  { id: 'prep-1m', atSeconds: 60, message: '1 minute.', visual: '1' },
+  { id: 'prep-30s', atSeconds: 30, message: '30 seconds.', visual: '30s' },
   { id: 'prep-5s', atSeconds: 5, message: '5-4-3-2-1 Time.' },
 ];
 
@@ -180,12 +180,9 @@ export default function App() {
   const addCue = (cue: Cue, cueMode: TimerMode) => {
     firedCuesRef.current.add(cue.id);
 
-    if (cueMode === 'prep') {
-      playSound(cue.id);
-      return;
-    }
+    const isCountdown = cue.id === 'prep-5s' || cue.id === 'speech-455';
 
-    if (cue.id === 'speech-455') {
+    if (isCountdown) {
       clearCountdownTimeouts();
       ['5', '4', '3', '2', '1'].forEach((digit, i) => {
         const t = setTimeout(() => {
@@ -194,11 +191,15 @@ export default function App() {
         }, i * 900);
         countdownTimeoutsRef.current.push(t);
       });
-      return;
+    } else {
+      setVisualSignal(cue.visual ?? cue.message);
+      triggerFlash();
     }
 
-    setVisualSignal(cue.visual ?? cue.message);
-    triggerFlash();
+    if (cueMode === 'prep') {
+      playSound(cue.id);
+      return;
+    }
   };
 
   useEffect(() => {
@@ -320,15 +321,13 @@ export default function App() {
           <View style={[styles.rightColumn, isLandscape && styles.rightColumnLandscape]}>
             {mode === 'prep' ? (
               <Text style={[styles.modeDescription, isLandscape && styles.modeDescriptionLandscape]}>
-                Spoken prep signals • Count Down from 5:00
+                Spoken + visual prep signals • Count Down from 5:00
               </Text>
             ) : null}
 
-{mode === 'speech' ? (
-              <View style={[styles.visualSignalCard, { maxHeight: height * 0.70 }]}>
-                <Text style={[styles.visualSignalValue, { fontSize: height * 0.78, lineHeight: height * 0.78 }]}>{visualSignal}</Text>
-              </View>
-            ) : null}
+            <View style={[styles.visualSignalCard, { maxHeight: height * 0.50 }]}>
+              <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.visualSignalValue, { fontSize: height * 0.44, lineHeight: height * 0.44 }]}>{visualSignal}</Text>
+            </View>
 
             <View style={styles.controlsRow}>
               <Pressable style={[styles.controlButton, styles.primaryButton]} onPress={toggleRunState}>
