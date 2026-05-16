@@ -21,8 +21,13 @@ speak() {
   rm "$tmp"
 }
 
-echo "Generating prep cue audio (voice: $VOICE, rate: $RATE)..."
+echo "Generating count down cue audio (voice: $VOICE, rate: $RATE)..."
 
+speak prep-9m  "9 minutes."
+speak prep-8m  "8 minutes."
+speak prep-7m  "7 minutes."
+speak prep-6m  "6 minutes."
+speak prep-5m  "5 minutes."
 speak prep-4m  "4 minutes."
 speak prep-3m  "3 minutes."
 speak prep-2m  "2 minutes."

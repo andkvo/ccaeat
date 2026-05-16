@@ -1,4 +1,5 @@
 import { Audio } from 'expo-av';
+import * as Speech from 'expo-speech';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
@@ -19,10 +20,15 @@ const FLASH_INTERVAL_MS = 120;
 const FLASH_START_DELAY_MS = 16;
 
 const MIN_DURATION_SECONDS = 60;
-const MAX_DURATION_SECONDS = 300;
+const MAX_DURATION_SECONDS = 600;
 const DURATION_STEP = 30;
 
 const ALL_PREP_CUES: Cue[] = [
+  { id: 'prep-9m', atSeconds: 540, message: '9 minutes.', visual: '9' },
+  { id: 'prep-8m', atSeconds: 480, message: '8 minutes.', visual: '8' },
+  { id: 'prep-7m', atSeconds: 420, message: '7 minutes.', visual: '7' },
+  { id: 'prep-6m', atSeconds: 360, message: '6 minutes.', visual: '6' },
+  { id: 'prep-5m', atSeconds: 300, message: '5 minutes.', visual: '5' },
   { id: 'prep-4m', atSeconds: 240, message: '4 minutes.', visual: '4' },
   { id: 'prep-3m', atSeconds: 180, message: '3 minutes.', visual: '3' },
   { id: 'prep-2m', atSeconds: 120, message: '2 minutes.', visual: '2' },
@@ -166,12 +172,16 @@ export default function App() {
     const sound = activeSoundRef.current;
     activeSoundRef.current = null;
     await sound?.unloadAsync();
+    Speech.stop();
   };
 
-  const playSound = async (cueId: string) => {
-    const source = PREP_AUDIO[cueId];
-    if (source == null) return;
+  const playSound = async (cue: Cue) => {
+    const source = PREP_AUDIO[cue.id];
     await stopSound();
+    if (source == null) {
+      Speech.speak(cue.message);
+      return;
+    }
     try {
       const { sound } = await Audio.Sound.createAsync(source);
       activeSoundRef.current = sound;
@@ -233,7 +243,7 @@ export default function App() {
     }
 
     if (cueMode === 'prep') {
-      playSound(cue.id);
+      playSound(cue);
     }
   };
 
@@ -317,7 +327,7 @@ export default function App() {
           <Text style={styles.settingsTitle}>Settings</Text>
 
           <View style={styles.settingBlock}>
-            <Text style={styles.settingLabel}>Prep Time</Text>
+            <Text style={styles.settingLabel}>Count Down Time</Text>
             <View style={styles.settingControl}>
               <Pressable
                 style={styles.stepButton}
@@ -336,7 +346,7 @@ export default function App() {
           </View>
 
           <View style={styles.settingBlock}>
-            <Text style={styles.settingLabel}>Speech Time</Text>
+            <Text style={styles.settingLabel}>Count Up Time</Text>
             <View style={styles.settingControl}>
               <Pressable
                 style={styles.stepButton}
@@ -377,7 +387,7 @@ export default function App() {
         <View style={[styles.layout, isLandscape && styles.layoutLandscape]}>
           <View style={[styles.leftColumn, isLandscape && styles.leftColumnLandscape]}>
             <View style={styles.titleRow}>
-              <Text style={[styles.title, isLandscape && styles.titleLandscape]}>{isLandscape ? 'Limited Prep' : 'Limited Prep Timer'}</Text>
+              <Text style={[styles.title, isLandscape && styles.titleLandscape]}>{isLandscape ? 'Limited Count Down' : 'Limited Count Down Timer'}</Text>
               <Pressable onPress={() => { resetTimer(); setShowSettings(true); }} style={styles.settingsButton}>
                 <Text style={styles.settingsButtonText}>⚙</Text>
               </Pressable>
@@ -388,14 +398,14 @@ export default function App() {
                 style={[styles.modeButton, isLandscape && styles.modeButtonLandscape, mode === 'prep' && styles.modeButtonActive]}
                 onPress={() => switchMode('prep')}
               >
-                <Text style={[styles.modeButtonText, mode === 'prep' && styles.modeButtonTextActive]}>Prep</Text>
+                <Text style={[styles.modeButtonText, mode === 'prep' && styles.modeButtonTextActive]}>Count Down</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
                 style={[styles.modeButton, isLandscape && styles.modeButtonLandscape, mode === 'speech' && styles.modeButtonActive]}
                 onPress={() => switchMode('speech')}
               >
-                <Text style={[styles.modeButtonText, mode === 'speech' && styles.modeButtonTextActive]}>Speaking</Text>
+                <Text style={[styles.modeButtonText, mode === 'speech' && styles.modeButtonTextActive]}>Count Up</Text>
               </Pressable>
             </View>
             <Text style={[styles.timer, isLandscape && styles.timerLandscape]}>{formatFromSeconds(displaySeconds)}</Text>
