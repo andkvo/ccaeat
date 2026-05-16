@@ -314,23 +314,19 @@ export default function App() {
                 <Text style={[styles.modeButtonText, mode === 'speech' && styles.modeButtonTextActive]}>Speaking</Text>
               </Pressable>
             </View>
+            <Text style={[styles.timer, isLandscape && styles.timerLandscape]}>{formatFromSeconds(displaySeconds)}</Text>
           </View>
 
           <View style={[styles.rightColumn, isLandscape && styles.rightColumnLandscape]}>
-            <Text style={[styles.modeDescription, isLandscape && styles.modeDescriptionLandscape]}>
-              {mode === 'prep'
-                ? 'Spoken prep signals • Count Down from 5:00'
-                : 'Silent speaking signals • Count Up from 0:00'}
-            </Text>
+            {mode === 'prep' ? (
+              <Text style={[styles.modeDescription, isLandscape && styles.modeDescriptionLandscape]}>
+                Spoken prep signals • Count Down from 5:00
+              </Text>
+            ) : null}
 
-            <View style={[styles.timerArea, isLandscape && styles.timerAreaLandscape]}>
-              <Text style={[styles.timer, isLandscape && styles.timerLandscape]}>{formatFromSeconds(displaySeconds)}</Text>
-            </View>
-
-            {mode === 'speech' ? (
-              <View style={styles.visualSignalCard}>
-                <Text style={styles.visualSignalLabel}>Silent Visual Signal (Minutes Remaining)</Text>
-                <Text style={styles.visualSignalValue}>{visualSignal}</Text>
+{mode === 'speech' ? (
+              <View style={[styles.visualSignalCard, { maxHeight: height * 0.70 }]}>
+                <Text style={[styles.visualSignalValue, { fontSize: height * 0.78, lineHeight: height * 0.78 }]}>{visualSignal}</Text>
               </View>
             ) : null}
 
@@ -444,13 +440,6 @@ const styles = StyleSheet.create({
   modeDescriptionLandscape: {
     textAlign: 'left',
   },
-  timerArea: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timerAreaLandscape: {
-    flex: 1,
-  },
   timer: {
     color: '#f8fafc',
     fontSize: 68,
@@ -466,23 +455,18 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderColor: '#f8fafc',
     borderWidth: 2,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#1e293b',
-    gap: 4,
   },
-  visualSignalLabel: {
-    color: '#93c5fd',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    fontSize: 13,
-  },
-  visualSignalValue: {
+visualSignalValue: {
     color: '#f8fafc',
     fontWeight: '800',
-    fontSize: 60,
-    lineHeight: 68,
+    width: '100%',
+    textAlign: 'center',
   },
   controlsRow: {
     flexDirection: 'row',
