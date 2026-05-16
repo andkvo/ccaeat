@@ -14,7 +14,7 @@ type Cue = {
 
 const PREP_DURATION_SECONDS = 5 * 60;
 const FLASH_COUNT = 10;
-const TOGGLES_PER_FLASH_CYCLE = 2;
+const TOGGLES_PER_COMPLETE_FLASH = 2;
 const FLASH_INTERVAL_MS = 120;
 const FLASH_START_DELAY_MS = 16;
 
@@ -63,6 +63,7 @@ export default function App() {
   const flashStartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flashIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const flashSequenceRef = useRef(0);
+  const flashTogglesRemainingRef = useRef(0);
 
   const displaySeconds = useMemo(() => {
     if (mode === 'prep') {
@@ -91,7 +92,7 @@ export default function App() {
     clearFlashTimeout();
     setFlashVisible(false);
     const sequenceId = flashSequenceRef.current;
-    let togglesRemaining = FLASH_COUNT * TOGGLES_PER_FLASH_CYCLE;
+    flashTogglesRemainingRef.current = FLASH_COUNT * TOGGLES_PER_COMPLETE_FLASH;
 
     flashStartTimeoutRef.current = setTimeout(() => {
       if (flashSequenceRef.current !== sequenceId) {
@@ -99,7 +100,7 @@ export default function App() {
       }
 
       setFlashVisible(true);
-      togglesRemaining -= 1;
+      flashTogglesRemainingRef.current -= 1;
       flashStartTimeoutRef.current = null;
 
       flashIntervalRef.current = setInterval(() => {
@@ -109,9 +110,9 @@ export default function App() {
         }
 
         setFlashVisible((previous) => !previous);
-        togglesRemaining -= 1;
+        flashTogglesRemainingRef.current -= 1;
 
-        if (togglesRemaining <= 0) {
+        if (flashTogglesRemainingRef.current <= 0) {
           clearFlashTimeout();
           setFlashVisible(false);
         }
