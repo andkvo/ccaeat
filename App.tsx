@@ -325,7 +325,7 @@ export default function App() {
               </Text>
             ) : null}
 
-<View style={[styles.visualSignalCard, { maxHeight: height * 0.50 }]}>
+            <View style={[styles.visualSignalCard, { maxHeight: height * 0.50 }]}>
               <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.visualSignalValue, { fontSize: height * 0.44, lineHeight: height * 0.44 }]}>{visualSignal}</Text>
             </View>
 
