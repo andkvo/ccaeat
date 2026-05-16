@@ -13,6 +13,10 @@ type Cue = {
 };
 
 const PREP_DURATION_SECONDS = 5 * 60;
+const FLASH_COUNT = 10;
+const TOGGLES_PER_COMPLETE_FLASH = 2;
+const FLASH_INTERVAL_MS = 120;
+const FLASH_START_DELAY_MS = 16;
 
 const PREP_CUES: Cue[] = [
   { id: 'prep-4m', atSeconds: 240, message: '4 minutes.' },
@@ -60,6 +64,10 @@ export default function App() {
   const firedCuesRef = useRef(new Set<string>());
   const previousElapsedMsRef = useRef(0);
   const tickTimestampRef = useRef<number | null>(null);
+  const flashStartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const flashSequenceRef = useRef(0);
+  const flashTogglesRemainingRef = useRef(0);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const activeSoundRef = useRef<Audio.Sound | null>(null);
@@ -74,9 +82,16 @@ export default function App() {
   }, [elapsedMs, mode]);
 
   const clearFlashTimeout = () => {
-    if (flashTimeoutRef.current) {
-      clearTimeout(flashTimeoutRef.current);
-      flashTimeoutRef.current = null;
+    flashSequenceRef.current += 1;
+
+    if (flashStartTimeoutRef.current) {
+      clearTimeout(flashStartTimeoutRef.current);
+      flashStartTimeoutRef.current = null;
+    }
+
+    if (flashIntervalRef.current) {
+      clearInterval(flashIntervalRef.current);
+      flashIntervalRef.current = null;
     }
   };
 
@@ -87,11 +102,57 @@ export default function App() {
 
   const triggerFlash = () => {
     clearFlashTimeout();
-    setFlashVisible(true);
-    flashTimeoutRef.current = setTimeout(() => {
-      setFlashVisible(false);
-      flashTimeoutRef.current = null;
-    }, 750);
+    setFlashVisible(false);
+    const sequenceId = flashSequenceRef.current;
+    flashTogglesRemainingRef.current = FLASH_COUNT * TOGGLES_PER_COMPLETE_FLASH;
+
+    flashStartTimeoutRef.current = setTimeout(() => {
+      if (flashSequenceRef.current !== sequenceId) {
+        return;
+      }
+
+      setFlashVisible(true);
+      flashTogglesRemainingRef.current -= 1;
+      flashStartTimeoutRef.current = null;
+
+      flashIntervalRef.current = setInterval(() => {
+        if (flashSequenceRef.current !== sequenceId) {
+          clearFlashTimeout();
+          return;
+        }
+
+        setFlashVisible((previous) => !previous);
+        flashTogglesRemainingRef.current -= 1;
+
+        if (flashTogglesRemainingRef.current <= 0) {
+          clearFlashTimeout();
+          setFlashVisible(false);
+        }
+      }, FLASH_INTERVAL_MS);
+    }, FLASH_START_DELAY_MS);
+  };
+
+  const stopSound = async () => {
+    const sound = activeSoundRef.current;
+    activeSoundRef.current = null;
+    await sound?.unloadAsync();
+  };
+
+  const playSound = async (cueId: string) => {
+    const source = PREP_AUDIO[cueId];
+    if (source == null) return;
+    await stopSound();
+    try {
+      const { sound } = await Audio.Sound.createAsync(source);
+      activeSoundRef.current = sound;
+      await sound.playAsync();
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          sound.unloadAsync();
+          if (activeSoundRef.current === sound) activeSoundRef.current = null;
+        }
+      });
+    } catch {}
   };
 
   const stopSound = async () => {
