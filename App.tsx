@@ -73,6 +73,7 @@ export default function App() {
   const flashIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const flashSequenceRef = useRef(0);
   const flashTogglesRemainingRef = useRef(0);
+  const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeSoundRef = useRef<Audio.Sound | null>(null);
 
   const displaySeconds = useMemo(() => {
@@ -128,6 +129,29 @@ export default function App() {
         }
       }, FLASH_INTERVAL_MS);
     }, FLASH_START_DELAY_MS);
+  };
+
+  const stopSound = async () => {
+    const sound = activeSoundRef.current;
+    activeSoundRef.current = null;
+    await sound?.unloadAsync();
+  };
+
+  const playSound = async (cueId: string) => {
+    const source = PREP_AUDIO[cueId];
+    if (source == null) return;
+    await stopSound();
+    try {
+      const { sound } = await Audio.Sound.createAsync(source);
+      activeSoundRef.current = sound;
+      await sound.playAsync();
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          sound.unloadAsync();
+          if (activeSoundRef.current === sound) activeSoundRef.current = null;
+        }
+      });
+    } catch {}
   };
 
   const stopSound = async () => {
