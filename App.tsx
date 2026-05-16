@@ -32,13 +32,8 @@ const SPEECH_CUES: Cue[] = [
   { id: 'speech-2m', atSeconds: 120, message: 'Hold up 3 fingers.', visual: '3' },
   { id: 'speech-3m', atSeconds: 180, message: 'Hold up 2 fingers.', visual: '2' },
   { id: 'speech-4m', atSeconds: 240, message: 'Hold up 1 finger.', visual: '1' },
-  { id: 'speech-430', atSeconds: 270, message: 'Show 30 seconds remaining.', visual: '30' },
-  {
-    id: 'speech-455',
-    atSeconds: 295,
-    message: 'Show 5-4-3-2-1 finger countdown.',
-    visual: '5-4-3-2-1',
-  },
+  { id: 'speech-430', atSeconds: 270, message: 'Show 30 seconds remaining.', visual: '30s' },
+  { id: 'speech-455', atSeconds: 295, message: 'Show 5-4-3-2-1 finger countdown.' },
 ];
 
 const PREP_AUDIO: Record<string, number> = {
@@ -74,6 +69,7 @@ export default function App() {
   const flashSequenceRef = useRef(0);
   const flashTogglesRemainingRef = useRef(0);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const activeSoundRef = useRef<Audio.Sound | null>(null);
 
   const displaySeconds = useMemo(() => {
@@ -97,6 +93,11 @@ export default function App() {
       clearInterval(flashIntervalRef.current);
       flashIntervalRef.current = null;
     }
+  };
+
+  const clearCountdownTimeouts = () => {
+    countdownTimeoutsRef.current.forEach(clearTimeout);
+    countdownTimeoutsRef.current = [];
   };
 
   const triggerFlash = () => {
@@ -186,6 +187,7 @@ export default function App() {
     setVisualSignal('READY');
     setFlashVisible(false);
     clearFlashTimeout();
+    clearCountdownTimeouts();
     stopSound();
     firedCuesRef.current.clear();
     previousElapsedMsRef.current = 0;
@@ -208,6 +210,18 @@ export default function App() {
 
     if (cueMode === 'prep') {
       playSound(cue.id);
+      return;
+    }
+
+    if (cue.id === 'speech-455') {
+      clearCountdownTimeouts();
+      ['5', '4', '3', '2', '1'].forEach((digit, i) => {
+        const t = setTimeout(() => {
+          setVisualSignal(digit);
+          triggerFlash();
+        }, i * 900);
+        countdownTimeoutsRef.current.push(t);
+      });
       return;
     }
 
@@ -288,6 +302,7 @@ export default function App() {
 
     return () => {
       clearFlashTimeout();
+      clearCountdownTimeouts();
       stopSound();
     };
   }, []);
