@@ -1,7 +1,7 @@
 import { Audio } from 'expo-av';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 type TimerMode = 'prep' | 'speech';
 
@@ -56,7 +56,7 @@ export default function App() {
   const [elapsedMs, setElapsedMs] = useState(0);
   const [running, setRunning] = useState(false);
   const [reportedSpeechTime, setReportedSpeechTime] = useState<string | null>(null);
-  const [visualSignal, setVisualSignal] = useState('READY');
+  const [visualSignal, setVisualSignal] = useState('');
   const [flashVisible, setFlashVisible] = useState(false);
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
@@ -70,6 +70,9 @@ export default function App() {
   const flashTogglesRemainingRef = useRef(0);
   const countdownTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const activeSoundRef = useRef<Audio.Sound | null>(null);
+  const signalOpacity = useRef(new Animated.Value(0)).current;
+  const signalFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const signalAnimRef = useRef<Animated.CompositeAnimation | null>(null);
 
   const displaySeconds = useMemo(() => {
     if (mode === 'prep') {
@@ -97,6 +100,29 @@ export default function App() {
   const clearCountdownTimeouts = () => {
     countdownTimeoutsRef.current.forEach(clearTimeout);
     countdownTimeoutsRef.current = [];
+  };
+
+  const showSignal = (text: string) => {
+    if (signalFadeTimerRef.current) {
+      clearTimeout(signalFadeTimerRef.current);
+      signalFadeTimerRef.current = null;
+    }
+    signalAnimRef.current?.stop();
+
+    setVisualSignal(text);
+    signalOpacity.setValue(1);
+
+    signalFadeTimerRef.current = setTimeout(() => {
+      const anim = Animated.timing(signalOpacity, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      });
+      signalAnimRef.current = anim;
+      anim.start(({ finished }) => {
+        if (finished) setVisualSignal('');
+      });
+    }, 5000);
   };
 
   const triggerFlash = () => {
@@ -162,6 +188,12 @@ export default function App() {
     setFlashVisible(false);
     clearFlashTimeout();
     clearCountdownTimeouts();
+    if (signalFadeTimerRef.current) {
+      clearTimeout(signalFadeTimerRef.current);
+      signalFadeTimerRef.current = null;
+    }
+    signalAnimRef.current?.stop();
+    signalOpacity.setValue(0);
     stopSound();
     firedCuesRef.current.clear();
     previousElapsedMsRef.current = 0;
@@ -186,13 +218,13 @@ export default function App() {
       clearCountdownTimeouts();
       ['5', '4', '3', '2', '1'].forEach((digit, i) => {
         const t = setTimeout(() => {
-          setVisualSignal(digit);
+          showSignal(digit);
           triggerFlash();
         }, i * 900);
         countdownTimeoutsRef.current.push(t);
       });
     } else {
-      setVisualSignal(cue.visual ?? cue.message);
+      showSignal(cue.visual ?? cue.message);
       triggerFlash();
     }
 
@@ -319,14 +351,11 @@ export default function App() {
           </View>
 
           <View style={[styles.rightColumn, isLandscape && styles.rightColumnLandscape]}>
-            {mode === 'prep' ? (
-              <Text style={[styles.modeDescription, isLandscape && styles.modeDescriptionLandscape]}>
-                Spoken + visual prep signals • Count Down from 5:00
-              </Text>
-            ) : null}
 
-            <View style={[styles.visualSignalCard, { maxHeight: height * 0.50 }]}>
-              <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.visualSignalValue, { fontSize: height * 0.44, lineHeight: height * 0.44 }]}>{visualSignal}</Text>
+<View style={[styles.visualSignalCard, { maxHeight: height * 0.50 }]}>
+              <Animated.View style={{ opacity: signalOpacity, width: '100%' }}>
+                <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.visualSignalValue, { fontSize: height * 0.44, lineHeight: height * 0.44 }]}>{visualSignal}</Text>
+              </Animated.View>
             </View>
 
             <View style={styles.controlsRow}>
