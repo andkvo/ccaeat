@@ -351,11 +351,6 @@ export default function App() {
           </View>
 
           <View style={[styles.rightColumn, isLandscape && styles.rightColumnLandscape]}>
-            {mode === 'prep' ? (
-              <Text style={[styles.modeDescription, isLandscape && styles.modeDescriptionLandscape]}>
-                Spoken prep signals • Count Down from 5:00
-              </Text>
-            ) : null}
 
 <View style={[styles.visualSignalCard, { maxHeight: height * 0.50 }]}>
               <Animated.View style={{ opacity: signalOpacity, width: '100%' }}>
