@@ -8,7 +8,7 @@ CCA Extemporaneous Apologetics Timer app for iOS and Android (Expo/React Native)
 - **Speaking mode**: 0:00 count-up with required **silent visual** hand-signal prompts at 1:00, 2:00, 3:00, 4:00, 4:30, and 4:55.
 - Speaking cues can **flash the screen** and show a **large visual signal** to get the speaker's attention without interrupting.
 - Start/Pause/Reset controls.
-- Current signal + recent signal history.
+- Portrait and landscape layouts, with a split view in landscape for quick mode switching and an expanded timer.
 - Speaking stop-time display to report to judges.
 
 ## Run
