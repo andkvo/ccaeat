@@ -14,8 +14,7 @@ type Cue = {
 
 const PREP_DURATION_SECONDS = 5 * 60;
 const FLASH_COUNT = 10;
-const FLASH_ON_MS = 120;
-const FLASH_OFF_MS = 120;
+const FLASH_INTERVAL_MS = 120;
 const FLASH_START_DELAY_MS = 16;
 
 const PREP_CUES: Cue[] = [
@@ -60,7 +59,8 @@ export default function App() {
   const firedCuesRef = useRef(new Set<string>());
   const previousElapsedMsRef = useRef(0);
   const tickTimestampRef = useRef<number | null>(null);
-  const flashTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const flashStartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const displaySeconds = useMemo(() => {
     if (mode === 'prep') {
@@ -72,25 +72,41 @@ export default function App() {
   }, [elapsedMs, mode]);
 
   const clearFlashTimeout = () => {
-    flashTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
-    flashTimeoutsRef.current = [];
+    if (flashStartTimeoutRef.current) {
+      clearTimeout(flashStartTimeoutRef.current);
+      flashStartTimeoutRef.current = null;
+    }
+
+    if (flashIntervalRef.current) {
+      clearInterval(flashIntervalRef.current);
+      flashIntervalRef.current = null;
+    }
   };
 
   const triggerFlash = () => {
     clearFlashTimeout();
     setFlashVisible(false);
+    let togglesRemaining = FLASH_COUNT * 2;
 
-    for (let flashIndex = 0; flashIndex < FLASH_COUNT; flashIndex += 1) {
-      const cycleStart = FLASH_START_DELAY_MS + flashIndex * (FLASH_ON_MS + FLASH_OFF_MS);
-      const showTimeout = setTimeout(() => {
-        setFlashVisible(true);
-      }, cycleStart);
-      const hideTimeout = setTimeout(() => {
-        setFlashVisible(false);
-      }, cycleStart + FLASH_ON_MS);
+    flashStartTimeoutRef.current = setTimeout(() => {
+      setFlashVisible(true);
+      togglesRemaining -= 1;
+      flashStartTimeoutRef.current = null;
 
-      flashTimeoutsRef.current.push(showTimeout, hideTimeout);
-    }
+      flashIntervalRef.current = setInterval(() => {
+        setFlashVisible((previous) => !previous);
+        togglesRemaining -= 1;
+
+        if (togglesRemaining <= 0) {
+          if (flashIntervalRef.current) {
+            clearInterval(flashIntervalRef.current);
+            flashIntervalRef.current = null;
+          }
+
+          setFlashVisible(false);
+        }
+      }, FLASH_INTERVAL_MS);
+    }, FLASH_START_DELAY_MS);
   };
 
   const resetTimer = () => {
