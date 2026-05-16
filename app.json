@@ -25,9 +25,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "name": "Limited Prep Timer",
+      "name": "Limited Count Down Timer",
       "shortName": "LPT",
-      "description": "Competitive debate limited prep timer with audio cues for CCA.",
+      "description": "Competitive debate count down and count up timer with audio cues for CCA.",
       "themeColor": "#0f172a",
       "backgroundColor": "#0f172a",
       "lang": "en"
